@@ -1,0 +1,29 @@
+{
+    "name": "vincent4vx/php-swf",
+    "description": "Wrapper of FFDEC for manipulate SWF files",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Vincent Quatrevieux",
+            "email": "quatrevieux.vincent@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Swf\\": "src"
+        }
+    },
+    "scripts": {
+        "post-update-cmd": [
+            "mkdir bin/",
+            "wget -P bin/ https://github.com/jindrapetrik/jpexs-decompiler/releases/download/nightly1722/ffdec_11.2.0_nightly1722.zip",
+            "unzip -d bin/ bin/ffdec_11.2.0_nightly1722.zip"
+        ]
+    }
+}
