@@ -5,6 +5,7 @@ namespace Swf\Processor;
 use PHPUnit\Framework\TestCase;
 use Swf\Asset\Sprite;
 use Swf\Cli\Export\Export;
+use Swf\Cli\Export\ExportResult;
 use Swf\Cli\Jar;
 use Swf\SwfFile;
 
@@ -113,5 +114,22 @@ class AssetLoaderTest extends TestCase
         $this->assertEquals(66.95, $sprite->bounds()->height());
 
         $this->assertEquals($sprite, $this->loader->findFromCache('race3s_fla.readySet_7'));
+    }
+
+    /**
+     *
+     */
+    public function test_withResult()
+    {
+        $loader = $this->loader->withResult($result = new ExportResult(__DIR__.'/../_files/out'));
+
+        $this->assertNotSame($loader, $this->loader);
+
+        $sprite = $loader->get(6);
+
+        $this->assertStringStartsWith(__DIR__.'/../_files/out', $sprite->frame());
+        $this->assertDirectoryExists(__DIR__.'/../_files/out');
+
+        $result->clear();
     }
 }

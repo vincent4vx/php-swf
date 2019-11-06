@@ -121,4 +121,14 @@ final class SwfFile implements ArrayAccess
 
         return $this->xml = (new ToXml($this->jar))->input($this->file)->output($filename)->execute();
     }
+
+    /**
+     * Get the swf file path
+     *
+     * @return string
+     */
+    public function path(): string
+    {
+        return $this->file;
+    }
 }

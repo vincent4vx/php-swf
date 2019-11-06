@@ -44,6 +44,11 @@ final class Sprite implements AssetInterface
     private $extractor;
 
     /**
+     * @var ShapeBounds|null
+     */
+    private $bounds;
+
+    /**
      * Sprite constructor.
      *
      * @param string $directory
@@ -118,7 +123,7 @@ final class Sprite implements AssetInterface
     }
 
     /**
-     *
+     * Get the frame format as mime type
      */
     public function mimeType(): string
     {
@@ -145,6 +150,10 @@ final class Sprite implements AssetInterface
      */
     public function bounds(): ?ShapeBounds
     {
-        return $this->extractor->bounds($this->id());
+        if ($this->bounds) {
+            return $this->bounds;
+        }
+
+        return $this->bounds = $this->extractor->bounds($this->id());
     }
 }

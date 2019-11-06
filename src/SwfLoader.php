@@ -3,6 +3,7 @@
 namespace Swf;
 
 use Swf\Cli\Jar;
+use Swf\Processor\BulkLoader;
 
 /**
  * Load Swf files
@@ -35,5 +36,23 @@ final class SwfLoader
     public function load(string $filename): SwfFile
     {
         return new SwfFile($this->jar, $filename);
+    }
+
+    /**
+     * Creates a bulk assets loader
+     *
+     * @param string[] $files List of swf source files
+     *
+     * @return BulkLoader
+     */
+    public function bulk(array $files): BulkLoader
+    {
+        $loader = new BulkLoader($this->jar);
+
+        foreach ($files as $file) {
+            $loader->addFile($this->load($file));
+        }
+
+        return $loader;
     }
 }

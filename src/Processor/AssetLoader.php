@@ -43,6 +43,11 @@ final class AssetLoader
      */
     private $result;
 
+    /**
+     * @var AssetInterface[]
+     */
+    private $cache = [];
+
 
     /**
      * AssetLoader constructor.
@@ -147,6 +152,10 @@ final class AssetLoader
      */
     public function getFromCache(int $id): ?AssetInterface
     {
+        if (isset($this->cache[$id])) {
+            return $this->cache[$id];
+        }
+
         if ($this->result === null || !$this->has($id)) {
             return null;
         }
@@ -159,7 +168,7 @@ final class AssetLoader
                     $sprite->setExtractor(new SpriteInfoExtractor($this->file));
                 }
 
-                return $sprite;
+                return $this->cache[$id] = $sprite;
 
             default:
                 // @todo implements other assets, and throw exception here
@@ -212,5 +221,26 @@ final class AssetLoader
         }
 
         return $this->get($id);
+    }
+
+    /**
+     * Change the export result
+     *
+     * @param ExportResult $result
+     *
+     * @return self The new loader instance
+     */
+    public function withResult(ExportResult $result): self
+    {
+        if ($this->result && $this->result->path() === $result->path()) {
+            return $this;
+        }
+
+        $loader = clone $this;
+
+        $loader->result = $result;
+        $loader->cache = [];
+
+        return $loader;
     }
 }

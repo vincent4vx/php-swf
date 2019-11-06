@@ -30,4 +30,23 @@ class SwfLoaderTest extends TestCase
 
         $this->assertInstanceOf(Sprite::class, $swf[4]);
     }
+
+    /**
+     *
+     */
+    public function test_bulk()
+    {
+        $bulk = $this->loader->bulk(glob(__DIR__.'/_files/*.swf'));
+
+        $sprites = $bulk
+            ->add('race3s_fla.readySet_7')
+            ->add('WaterCircle')
+            ->load()
+        ;
+
+        $this->assertContainsOnlyInstancesOf(Sprite::class, $sprites);
+        $this->assertCount(2, $sprites);
+        $this->assertArrayHasKey('race3s_fla.readySet_7', $sprites);
+        $this->assertArrayHasKey('WaterCircle', $sprites);
+    }
 }

@@ -93,4 +93,12 @@ class SwfFileTest extends TestCase
         $xml->clear();
         $newXml->clear();
     }
+
+    /**
+     *
+     */
+    public function test_path()
+    {
+        $this->assertEquals(__DIR__.'/_files/race3s.swf', $this->file->path());
+    }
 }
