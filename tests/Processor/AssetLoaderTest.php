@@ -85,8 +85,8 @@ class AssetLoaderTest extends TestCase
         $sprite = $this->loader->get(4);
 
         $this->assertInstanceOf(Sprite::class, $sprite);
-        $this->assertEquals(641.15, $sprite->bounds()->width());
-        $this->assertEquals(503.15, $sprite->bounds()->height());
+        $this->assertEquals(641, $sprite->bounds()->width());
+        $this->assertEquals(503, $sprite->bounds()->height());
 
         $this->assertEquals($sprite, $this->loader->getFromCache(4));
     }
@@ -110,8 +110,8 @@ class AssetLoaderTest extends TestCase
         $sprite = $this->loader->find('race3s_fla.readySet_7');
 
         $this->assertInstanceOf(Sprite::class, $sprite);
-        $this->assertEquals(163.90, $sprite->bounds()->width());
-        $this->assertEquals(66.95, $sprite->bounds()->height());
+        $this->assertEquals(163, $sprite->bounds()->width());
+        $this->assertEquals(66, $sprite->bounds()->height());
 
         $this->assertEquals($sprite, $this->loader->findFromCache('race3s_fla.readySet_7'));
     }

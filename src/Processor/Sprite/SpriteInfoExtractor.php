@@ -2,6 +2,7 @@
 
 namespace Swf\Processor\Sprite;
 
+use Bdf\Collection\Stream\Streams;
 use Swf\SwfFile;
 
 /**
@@ -30,30 +31,24 @@ final class SpriteInfoExtractor
      *
      * @param int $spriteId The sprite character id
      *
-     * @return ShapeBounds
+     * @return Rectangle|null
      */
-    public function bounds(int $spriteId): ShapeBounds
+    public function bounds(int $spriteId): ?Rectangle
     {
-        $shapes = $this->dependencies($spriteId);
-
-        if (empty($shapes)) {
-            return new ShapeBounds(0, 0, 0, 0); // @todo ?
-        }
-
-        // @todo handle multiple shapes
-        // @todo handle nested sprites
-        if (!($shape = $this->file->toXml()->shape($shapes[0]))) {
-            return new ShapeBounds(0, 0, 0, 0); // @todo ?
-        }
-
-        $bounds = $shape->shapeBounds;
-
-        return new ShapeBounds(
-            (int) $bounds['Xmin'],
-            (int) $bounds['Xmax'],
-            (int) $bounds['Ymin'],
-            (int) $bounds['Ymax']
-        );
+        return Streams::wrap($this->placeObjectMatrices($spriteId))
+            ->mapKey(function (array $matrices, $characterId) {
+                return $this->assetBounds($characterId);
+            })
+            ->filter(function (array $matrices, $key) {
+                return $key !== null;
+            })
+            ->flatMap(function (array $matrices, Rectangle $bounds) {
+                return Streams::wrap($matrices)->map([$bounds, 'transform']);
+            })
+            ->reduce(function (?Rectangle $a, Rectangle $b) {
+                return $a ? $a->merge($b) : $b;
+            })
+        ;
     }
 
     /**
@@ -74,5 +69,81 @@ final class SpriteInfoExtractor
         }
 
         return $shapes;
+    }
+
+    /**
+     * Extract place objects matrices
+     *
+     * @param int $spriteId The sprite character id
+     *
+     * @return Matrix[][]
+     */
+    public function placeObjectMatrices(int $spriteId): array
+    {
+        // @todo exception ?
+        $sprite = $this->file->toXml()->sprite($spriteId);
+
+        if (!$sprite) {
+            return [];
+        }
+
+        $matrices = [];
+
+        foreach ($sprite->subTags->item as $item) {
+            if (empty($item['characterId']) || substr($item['type'], 0, strlen('PlaceObject')) !== 'PlaceObject') {
+                continue;
+            }
+
+            $matrices[(int) $item['characterId']][] = $this->parseMatrixElement($item->matrix);
+        }
+
+        return $matrices;
+    }
+
+    /**
+     * Creates the Matrix from the xml element
+     *
+     * @param \SimpleXMLElement $element
+     *
+     * @return Matrix
+     */
+    private function parseMatrixElement(\SimpleXMLElement $element): Matrix
+    {
+        $matrix = new Matrix();
+
+        $matrix->translate((int) $element['translateX'], (int) $element['translateY']);
+
+        if ($element['hasScale'] == 'true') {
+            $matrix->scale((int) $element['scaleX'], (int) $element['scaleY']);
+        }
+
+        if ($element['hasRotate'] == 'true') {
+            $matrix->rotate((int) $element['rotateSkew0'], (int) $element['rotateSkew1']);
+        }
+
+        return $matrix;
+    }
+
+    /**
+     * Try to get bounds of an asset
+     *
+     * @param int $characterId
+     *
+     * @return Rectangle|null
+     */
+    private function assetBounds(int $characterId): ?Rectangle
+    {
+        // Check for shape
+        if ($shape = $this->file->toXml()->shape($characterId)) {
+            return new Rectangle(
+                (int) $shape->shapeBounds['Xmin'],
+                (int) $shape->shapeBounds['Xmax'],
+                (int) $shape->shapeBounds['Ymin'],
+                (int) $shape->shapeBounds['Ymax']
+            );
+        }
+
+        // Check for nested sprite
+        return $this->bounds($characterId);
     }
 }

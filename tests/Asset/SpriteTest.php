@@ -79,8 +79,8 @@ class SpriteTest extends TestCase
 
         $this->assertEquals(-2, $this->sprite->bounds()->Xoffset());
         $this->assertEquals(-2, $this->sprite->bounds()->Yoffset());
-        $this->assertEquals(163.9, $this->sprite->bounds()->width());
-        $this->assertEquals(66.95, $this->sprite->bounds()->height());
+        $this->assertEquals(163, $this->sprite->bounds()->width());
+        $this->assertEquals(66, $this->sprite->bounds()->height());
 
         $this->assertSame($this->sprite->bounds(), $this->sprite->bounds());
     }

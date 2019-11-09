@@ -5,6 +5,7 @@ namespace Swf\Processor\Sprite;
 use PHPUnit\Framework\TestCase;
 use Swf\Cli\Jar;
 use Swf\SwfFile;
+use Swf\SwfLoader;
 
 /**
  * Class SpriteInfoExtractorTest
@@ -36,14 +37,41 @@ class SpriteInfoExtractorTest extends TestCase
     public function test_bounds()
     {
         $bounds = $this->extractor->bounds(4);
-        $this->assertEquals(new ShapeBounds(-260, 12563, 681, 10744), $bounds);
+        $this->assertEquals(new Rectangle(-260, 12563, 681, 10744), $bounds);
 
         $this->assertEquals(-13, $bounds->Xoffset());
-        $this->assertEquals(34.05, $bounds->Yoffset());
-        $this->assertEquals(641.15, $bounds->width());
-        $this->assertEquals(503.15, $bounds->height());
+        $this->assertEquals(34, $bounds->Yoffset());
+        $this->assertEquals(641, $bounds->width());
+        $this->assertEquals(503, $bounds->height());
 
-        // @todo Nested
-        //$this->assertEquals(new ShapeBounds(-6400, 6400, -5000, 5000), $this->extractor->bounds(9));
+        $this->assertEquals(new Rectangle(-6411, 6412, -5031, 5032), $this->extractor->bounds(9));
+    }
+
+    /**
+     *
+     */
+    public function test_bounds_with_matrix()
+    {
+        $this->extractor = new SpriteInfoExtractor((new SwfLoader())->load(__DIR__.'/../../_files/o3.swf'));
+        $bounds = $this->extractor->bounds(120);
+
+        $this->assertEquals(-29, $bounds->Xoffset());
+        $this->assertEquals(-18, $bounds->Yoffset());
+        $this->assertEquals(71, $bounds->width());
+        $this->assertEquals(30, $bounds->height());
+    }
+
+    /**
+     *
+     */
+    public function test_bounds_with_multiple_shapes()
+    {
+        $this->extractor = new SpriteInfoExtractor((new SwfLoader())->load(__DIR__.'/../../_files/o3.swf'));
+        $bounds = $this->extractor->bounds(1254);
+
+        $this->assertEquals(32, $bounds->width());
+        $this->assertEquals(16, $bounds->height());
+        $this->assertEquals(-15, $bounds->Xoffset());
+        $this->assertEquals(-7, $bounds->Yoffset());
     }
 }

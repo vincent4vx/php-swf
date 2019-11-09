@@ -4,7 +4,7 @@ namespace Swf\Asset;
 
 use RangeException;
 use RuntimeException;
-use Swf\Processor\Sprite\ShapeBounds;
+use Swf\Processor\Sprite\Rectangle;
 use Swf\Processor\Sprite\SpriteInfoExtractor;
 use Swf\Cli\Export\Export;
 
@@ -44,7 +44,7 @@ final class Sprite implements AssetInterface
     private $extractor;
 
     /**
-     * @var ShapeBounds|null
+     * @var Rectangle|null
      */
     private $bounds;
 
@@ -146,9 +146,9 @@ final class Sprite implements AssetInterface
      * Get the bounds of the shape
      * Note: works only if an extractor is linked with the sprite
      *
-     * @return ShapeBounds|null
+     * @return Rectangle|null
      */
-    public function bounds(): ?ShapeBounds
+    public function bounds(): ?Rectangle
     {
         if ($this->bounds) {
             return $this->bounds;
