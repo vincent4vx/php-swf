@@ -8,6 +8,8 @@ use RecursiveIteratorIterator;
 
 /**
  * Class InstallerTest
+ *
+ * @group installer
  */
 class InstallerTest extends TestCase
 {

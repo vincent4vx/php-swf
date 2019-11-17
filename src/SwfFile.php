@@ -115,8 +115,14 @@ final class SwfFile implements ArrayAccess
      */
     public function toXml(?string $filename = null): SwfXml
     {
-        if ($this->xml && $this->xml->valid() && (!$filename || realpath($filename) === $this->xml->path())) {
-            return $this->xml;
+        if ($this->xml && $this->xml->valid()) {
+            if ((!$filename || realpath($filename) === $this->xml->path())) {
+                return $this->xml;
+            }
+
+            copy($this->xml->path(), $filename);
+
+            return $this->xml = new SwfXml($filename);
         }
 
         return $this->xml = (new ToXml($this->jar))->input($this->file)->output($filename)->execute();

@@ -77,6 +77,14 @@ final class ToXml
     {
         $output = $this->output ?: tempnam(sys_get_temp_dir(), 'swf_xml_');
 
+        if (!file_exists($output)) {
+            if (!is_dir(dirname($output))) {
+                mkdir(dirname($output), 0777, true);
+            }
+
+            touch($output);
+        }
+
         $this->jar
             ->option('swf2xml', $this->input)
             ->argument($output)

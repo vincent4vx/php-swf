@@ -3,6 +3,7 @@
 namespace Swf\Processor\Sprite;
 
 use Bdf\Collection\Stream\Streams;
+use SimpleXMLElement;
 use Swf\SwfFile;
 
 /**
@@ -60,15 +61,17 @@ final class SpriteInfoExtractor
      */
     public function dependencies(int $spriteId): array
     {
-        $shapes = [];
+        return $this->file->toXml()->sprite($spriteId)->subTags->item->map(function ($items) {
+            $shapes = [];
 
-        foreach ($this->file->toXml()->sprite($spriteId)->subTags->item as $item) {
-            if (!empty($item['characterId'])) {
-                $shapes[] = (int) $item['characterId'];
+            foreach ($items as $item) {
+                if (!empty($item['characterId'])) {
+                    $shapes[] = (int) $item['characterId'];
+                }
             }
-        }
 
-        return $shapes;
+            return $shapes;
+        })->or([]);
     }
 
     /**
@@ -80,34 +83,29 @@ final class SpriteInfoExtractor
      */
     public function placeObjectMatrices(int $spriteId): array
     {
-        // @todo exception ?
-        $sprite = $this->file->toXml()->sprite($spriteId);
+        return $this->file->toXml()->sprite($spriteId)->subTags->item->map(function ($items) {
+            $matrices = [];
 
-        if (!$sprite) {
-            return [];
-        }
+            foreach ($items as $item) {
+                if (empty($item['characterId']) || substr($item['type'], 0, strlen('PlaceObject')) !== 'PlaceObject') {
+                    continue;
+                }
 
-        $matrices = [];
-
-        foreach ($sprite->subTags->item as $item) {
-            if (empty($item['characterId']) || substr($item['type'], 0, strlen('PlaceObject')) !== 'PlaceObject') {
-                continue;
+                $matrices[(int) $item['characterId']][] = $this->parseMatrixElement($item->matrix);
             }
 
-            $matrices[(int) $item['characterId']][] = $this->parseMatrixElement($item->matrix);
-        }
-
-        return $matrices;
+            return $matrices;
+        })->or([]); // @todo exception ?
     }
 
     /**
      * Creates the Matrix from the xml element
      *
-     * @param \SimpleXMLElement $element
+     * @param SimpleXMLElement $element
      *
      * @return Matrix
      */
-    private function parseMatrixElement(\SimpleXMLElement $element): Matrix
+    private function parseMatrixElement(SimpleXMLElement $element): Matrix
     {
         $matrix = new Matrix();
 
@@ -133,17 +131,20 @@ final class SpriteInfoExtractor
      */
     private function assetBounds(int $characterId): ?Rectangle
     {
-        // Check for shape
-        if ($shape = $this->file->toXml()->shape($characterId)) {
-            return new Rectangle(
-                (int) $shape->shapeBounds['Xmin'],
-                (int) $shape->shapeBounds['Xmax'],
-                (int) $shape->shapeBounds['Ymin'],
-                (int) $shape->shapeBounds['Ymax']
-            );
-        }
-
-        // Check for nested sprite
-        return $this->bounds($characterId);
+        return $this->file->toXml()->shape($characterId)
+            ->map(function (SimpleXMLElement $shape) {
+                // A shape is found
+                return new Rectangle(
+                    (int) $shape->shapeBounds['Xmin'],
+                    (int) $shape->shapeBounds['Xmax'],
+                    (int) $shape->shapeBounds['Ymin'],
+                    (int) $shape->shapeBounds['Ymax']
+                );
+            })
+            ->orSupply(function () use($characterId) {
+                // Check for nested sprite
+                return $this->bounds($characterId);
+            })
+        ;
     }
 }

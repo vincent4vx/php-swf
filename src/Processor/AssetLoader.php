@@ -5,6 +5,7 @@ namespace Swf\Processor;
 use Swf\Asset\AssetInterface;
 use Swf\Cli\Export\Export;
 use Swf\Cli\Export\ExportResult;
+use Swf\Cli\ToXml\SwfXml;
 use Swf\Processor\Sprite\SpriteInfoExtractor;
 use Swf\SwfFile;
 
@@ -69,14 +70,18 @@ final class AssetLoader
     public function resolveId(string $name): ?int
     {
         if ($this->exports === null) {
-            $this->exports = $this->file->toXml()->exportedAssets();
+            $this->exports = $this->xml()->exportedAssets();
+        }
+
+        if (isset($this->exports[$name])) {
+            return $this->exports[$name];
         }
 
         if ($this->symbols === null) {
-            $this->symbols = $this->file->toXml()->symbolClass();
+            $this->symbols = $this->xml()->symbolClass();
         }
 
-        return $this->exports[$name] ?? $this->symbols[$name] ?? null;
+        return $this->symbols[$name] ?? null;
     }
 
     /**
@@ -101,7 +106,7 @@ final class AssetLoader
     public function typeOf(int $characterId): ?string
     {
         if ($this->assets === null) {
-            $this->assets = $this->file->toXml()->assetTypes();
+            $this->assets = $this->xml()->assetTypes();
         }
 
         return $this->assets[$characterId] ?? null;
@@ -242,5 +247,22 @@ final class AssetLoader
         $loader->cache = [];
 
         return $loader;
+    }
+
+    /**
+     * Get the XML file
+     * If there is a an export result, the XML will be saved into the export result directory
+     *
+     * @return SwfXml
+     */
+    private function xml(): SwfXml
+    {
+        if ($this->result) {
+            $path = $this->result->path().DIRECTORY_SEPARATOR.basename($this->file->path()).'.xml';
+
+            return $this->file->toXml($path);
+        }
+
+        return $this->file->toXml();
     }
 }

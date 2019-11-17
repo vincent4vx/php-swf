@@ -129,6 +129,7 @@ class AssetLoaderTest extends TestCase
 
         $this->assertStringStartsWith(__DIR__.'/../_files/out', $sprite->frame());
         $this->assertDirectoryExists(__DIR__.'/../_files/out');
+        $this->assertFileExists(__DIR__.'/../_files/out/race3s.swf.xml');
 
         $result->clear();
     }

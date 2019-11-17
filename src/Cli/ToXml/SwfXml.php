@@ -2,8 +2,12 @@
 
 namespace Swf\Cli\ToXml;
 
+use Bdf\Collection\Stream\StreamInterface;
+use Bdf\Collection\Stream\Streams;
+use Bdf\Collection\Util\OptionalInterface;
 use SimpleXMLElement;
 use Swf\Cli\Export\Export;
+use XMLReader;
 
 /**
  * Store the result of ToXml command
@@ -16,11 +20,6 @@ final class SwfXml
      * @var string
      */
     private $file;
-
-    /**
-     * @var SimpleXMLElement
-     */
-    private $xml;
 
     /**
      * SwfXml constructor.
@@ -37,11 +36,11 @@ final class SwfXml
      *
      * @param string $type The type name (without suffix "Tag")
      *
-     * @return SimpleXMLElement[]
+     * @return StreamInterface|SimpleXMLElement[]
      */
-    public function tagsByType(string $type): array
+    public function tagsByType(string $type): StreamInterface
     {
-        return $this->xml()->xpath('/swf/tags/item[@type="' . $type . 'Tag"]');
+        return $this->tags()->filter(function (SimpleXMLElement $e) use($type) { return $e['type'] == $type.'Tag'; });
     }
 
     /**
@@ -94,7 +93,7 @@ final class SwfXml
     {
         $assets = [];
 
-        foreach ($this->xml()->tags->item as $item) {
+        foreach ($this->read(['swf', 'tags', 'item']) as $item) {
             // @todo add other tags
             switch ((string) $item['type']) {
                 case 'DefineShapeTag':
@@ -125,11 +124,11 @@ final class SwfXml
      *
      * @param int $id
      *
-     * @return SimpleXMLElement
+     * @return SimpleXMLElement|OptionalInterface
      */
-    public function sprite(int $id): ?SimpleXMLElement
+    public function sprite(int $id): OptionalInterface
     {
-        return $this->xml()->xpath('/swf/tags/item[@spriteId="' . $id . '"]')[0] ?? null;
+        return $this->tags()->filter(function ($item) use($id) { return $item['spriteId'] == $id; })->first();
     }
 
     /**
@@ -137,33 +136,69 @@ final class SwfXml
      *
      * @param int $id
      *
-     * @return SimpleXMLElement
+     * @return SimpleXMLElement|OptionalInterface
      */
-    public function shape(int $id): ?SimpleXMLElement
+    public function shape(int $id): OptionalInterface
     {
-        return $this->xml()->xpath('/swf/tags/item[@shapeId="' . $id . '"]')[0] ?? null;
+        return $this->tags()->filter(function ($item) use($id) { return $item['shapeId'] == $id; })->first();
     }
 
     /**
-     * Get the XML object
+     * Open the Xml file
      *
-     * @return SimpleXMLElement
+     * @return XMLReader
      */
-    public function xml(): SimpleXMLElement
+    public function open(): XMLReader
     {
-        if ($this->xml) {
-            return $this->xml;
-        }
+        $reader = new XMLReader();
+        $reader->open('file://'.$this->file);
 
-        return $this->xml = simplexml_load_file($this->file);
+        return $reader;
     }
 
     /**
-     * @return array
+     * Read XML elements from XMLReader
+     *
+     * Ex: `read(['swf', 'tags', 'item'])` For get all <item> elements into <swf> and <tags> elements
+     *
+     * @param string[] $path The elements paths. Must include the root path, and the requested element
+     *
+     * @return iterable|SimpleXMLElement[]
      */
-    public function __sleep()
+    public function read(array $path): iterable
     {
-        return ['file'];
+        $reader = $this->open();
+        $requestedDepth = count($path) - 1;
+
+        try {
+            if (!$reader->read()) {
+                return;
+            }
+
+            do {
+                if ($reader->name === $path[$reader->depth]) {
+                    if ($reader->depth === $requestedDepth) {
+                        yield new SimpleXMLElement($reader->readOuterXml());
+                    } else {
+                        if (!$reader->read()) {
+                            return;
+                        }
+                    }
+                }
+            } while ($reader->next());
+        } finally {
+            $reader->close();
+        }
+    }
+
+    /**
+     * Get all Swf tag elements
+     *
+     * @return StreamInterface|SimpleXMLElement[]
+     */
+    public function tags(): StreamInterface
+    {
+        return Streams::wrap($this->read(['swf', 'tags', 'item']));
     }
 
     /**
